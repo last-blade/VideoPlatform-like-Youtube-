@@ -1,7 +1,7 @@
 // 1. promises wala tareeka
 
 const asyncHandler = (requestHandler) => {
-    (request, response, next) => {
+    return (request, response, next) => {
         Promise.resolve(requestHandler(request, response, next)).catch((error) => next(error))
     }
 }
