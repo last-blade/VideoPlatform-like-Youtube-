@@ -43,7 +43,7 @@ const registerUser = asyncHandler( async (request, response) => {
     /*const existedUser = User.findOne({email});    database mein user ko find kar rahe hain uski email id ke through, lekin hum doosre
                                                     tareeke se karenge check*/
                                                     
-    const existedUser = User.findOne({
+    const existedUser = await User.findOne({
         $or: [{email}, {username}], // '$or'-> The $or operator is used to specify that either one of the conditions should match.
     });
     
