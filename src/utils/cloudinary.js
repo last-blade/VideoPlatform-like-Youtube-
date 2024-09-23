@@ -28,10 +28,10 @@ const uploadOnCloudinary = async (localFilePath) => {
     } 
     
     catch (error) {
-      fs.unlinkSync(localFilePath);
       //removing the locally saved temporary file as upload operation got failed, i.e., agar kisi wajah se humari file cloudinary par upload nahin huyi hai, toh fir hum apne local server se bhi uss file ko dete kar rahe hain jisee ki agar hum dobara se upload karenge file toh fir uski ek or copy ban jaayegi humare local server par, i.e. jab bhi hum cloudinary par file upload karenge toh fir usse pehle hum apne local server par temporarily save kar lete hain uss file ko and fir uss file ko cloudinary par bhej dete hain
       return null;
     }
+    fs.unlinkSync(localFilePath);
 }
 
 export { uploadOnCloudinary }

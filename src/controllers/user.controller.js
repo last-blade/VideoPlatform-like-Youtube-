@@ -118,16 +118,18 @@ const loginUser = asyncHandler(async (request, response) => {
     if password correct-> show error
     if user not exist-> return error
     */
-
+    console.log("body:- ",request.body);
     const {email, password} = request.body;
 
-    if(!email){
-        throw new apiError(400, "Email is required.")
+    if(!(email && password)){
+        throw new apiError(404, "Email or password is required.")
     }
 
     const user = await User.findOne({
         $or: [{email}]
     })
+
+    console.log("email:- ", email)
 
     if(!user){
         throw new apiError(404, "User not found.")
@@ -141,7 +143,7 @@ const loginUser = asyncHandler(async (request, response) => {
 
     const {accessToken, refreshToken} = await generateAccessTokenAndRefreshToken(user._id);
 
-    const loggedInUser = User.findById(user._id).select("-password -refreshToken");
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
 
     const options = {
         httpOnly: true, // by default jo hai server par cookies ko edit karne ke permission hoti hai, lekin httpOnly and secure ko true karne se ab cookies ko edit nahin kar sakta koi bhi, ab bas server hi modify kar sakta hai cookies ko
