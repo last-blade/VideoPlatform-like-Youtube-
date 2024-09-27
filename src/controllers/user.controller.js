@@ -3,12 +3,13 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { apiResponse } from "../utils/apiResponse.js"
+import jwt from "jsonwebtoken";
 
 const generateAccessTokenAndRefreshToken = async (userId) => {
     try {
         const user = await User.findById(userId);
-        const accessToken = user.generateAccessToken();
-        const refreshToken = user.generateRefreshToken();
+        const accessToken = await user.generateAccessToken();
+        const refreshToken = await user.generateRefreshToken();
 
         user.refreshToken = refreshToken;
         await user.save({validateBeforeSave: false});
@@ -143,12 +144,15 @@ const loginUser = asyncHandler(async (request, response) => {
 
     const {accessToken, refreshToken} = await generateAccessTokenAndRefreshToken(user._id);
 
-    const loggedInUser = await User.findById(user._id).select("-password -refreshToken").lean();
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
 
     const options = {
         httpOnly: true, // by default jo hai server par cookies ko edit karne ke permission hoti hai, lekin httpOnly and secure ko true karne se ab cookies ko edit nahin kar sakta koi bhi, ab bas server hi modify kar sakta hai cookies ko
         secure: true
     }
+
+    // console.log("AccessToke:- ", accessToken);
+    // console.log("RefreshToken:- ", refreshToken);
 
     return response
     .status(200)
@@ -175,4 +179,44 @@ const logoutUser = asyncHandler(async (request, response) => {
 
 });
 
-export {registerUser, loginUser, logoutUser}
+const refreshAccessToken = asyncHandler(async (request, response) => {
+    try {
+        const incomingRefreshToken = request.cookies.refreshToken || request.body.refreshToken;
+    
+        if(!incomingRefreshToken){
+            throw new apiError(401, "Unauthorized request.")
+        }
+    
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
+    
+        const user = await User.findById(decodedToken?._id);
+    
+        if(!user){
+            throw new apiError(401, "Invalid refresh token")
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new apiError(401, "Refresh token is expired or used.")
+        }
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        const {accessToken, newRefreshToken} = await generateAccessTokenAndRefreshToken(user._id);
+    
+        return response
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newRefreshToken, options )
+        .json(
+            new apiResponse(200, {accessToken, refreshToken: newRefreshToken}, "Access token refreshed successfully.")
+        )
+    } catch (error) {
+        throw new apiError(401, error.message)
+    }
+
+})
+
+export {registerUser, loginUser, logoutUser, refreshAccessToken}
