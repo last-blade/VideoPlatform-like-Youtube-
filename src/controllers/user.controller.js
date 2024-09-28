@@ -234,6 +234,10 @@ const changeCurrentPassword = asyncHandler(async (request, response) => {
     await user.save({validateBeforeSave: false});
 
     return response.status(200).json(new apiResponse(200, {}, "Password changed successfully."))
+});
+
+const getCurrentUser = asyncHandler(async (request, response) => {
+    return response.status(200).json(new apiResponse(200, request.user, "Current user fetched successfully."))
 })
 
-export {registerUser, loginUser, logoutUser, refreshAccessToken}
+export {registerUser, loginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser}
